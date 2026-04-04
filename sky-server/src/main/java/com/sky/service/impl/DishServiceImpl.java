@@ -75,7 +75,7 @@ public class DishServiceImpl implements DishService {
     public void deleteBatch(List<Long> ids) {
         for (Long id : ids) {
             //判断是否起售
-            Dish dish =dishMapper.GetById(id);
+            Dish dish =dishMapper.getById(id);
             if(dish.getStatus() == StatusConstant.ENABLE){
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
             }
@@ -86,8 +86,44 @@ public class DishServiceImpl implements DishService {
             throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
         //删除
-        dishMapper.deleteById(ids);
+        dishMapper.deleteByIds(ids);
         //还要删除 口味表
-        dishFlavorMapper.deleteByDihsId(ids);
+        dishFlavorMapper.deleteByDishIds(ids);
+    }
+
+    @Override
+    public DishVO getById(Long id) {
+        //根据id查询菜品
+        Dish dish = dishMapper.getById(id);
+        //查询口味
+        List<DishFlavor> dishFlavors =  dishFlavorMapper.getByDishId(id);
+        //创建VO对象
+        DishVO dishVO = new DishVO();
+        BeanUtils.copyProperties(dish,dishVO);
+        dishVO.setFlavors(dishFlavors);
+        return dishVO;
+    }
+
+    /**
+     * 修改菜品 和 口味
+     * @param dishDTO
+     */
+    @Override
+    public void updateWithFlavors(DishDTO dishDTO) {
+        //修改菜品
+        Dish dish = new Dish();
+        BeanUtils.copyProperties(dishDTO,dish);
+        dishMapper.update(dish);
+        //修改口味 删除之前的
+        dishFlavorMapper.deleteByDishId(dishDTO.getId());
+        //新建新的
+        List<DishFlavor> flavors = dishDTO.getFlavors();
+        if(flavors == null || flavors.size() == 0){
+            return;
+        }
+        for (DishFlavor flavor : flavors) {
+            flavor.setDishId(dishDTO.getId());
+        }
+        dishFlavorMapper.insertBatch(flavors);
     }
 }
