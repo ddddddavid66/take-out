@@ -2,11 +2,18 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.sky.mapper.SetMealDishMapper">
-
     <select id="getSetMealIdByDishId" resultType="java.lang.Long">
         select setmeal_id from setmeal_dish where dish_id in
         <foreach collection="ids" separator="," item="dishId" open="(" close=")">
             #{dishId}
         </foreach>
     </select>
+    <insert id="insertBatch" >
+insert into setmeal_dish (id, setmeal_id, dish_id, name, price, copies)
+values
+    <foreach collection="setMealDishes" item="md" separator=",">
+        (#{md.id},#{md.setmealId},#{md.name},#{md.price},#{md.copies})
+    </foreach>
+    </insert>
+
 </mapper>
