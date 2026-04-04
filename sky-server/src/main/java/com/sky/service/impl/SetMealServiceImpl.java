@@ -49,6 +49,11 @@ public class SetMealServiceImpl implements SetMealService {
         setMealDishMapper.insertBatch(setMealDishes);
     }
 
+    /**
+     * 分页查询实现
+     * @param setmealPageQueryDTO
+     * @return
+     */
     @Override
     public PageResult pageQuery(SetmealPageQueryDTO setmealPageQueryDTO) {
         PageHelper.startPage(setmealPageQueryDTO.getPage(),setmealPageQueryDTO.getPageSize());
@@ -58,11 +63,52 @@ public class SetMealServiceImpl implements SetMealService {
         return new PageResult(total,list);
     }
 
+    /**
+     * 删除套餐
+     * @param ids
+     */
     @Override
     public void deleteBatch(List<Long> ids) {
         if(ids.isEmpty() || ids.size() == 0){
             return;
         }
         setmealMapper.deleteBatch(ids);
+    }
+
+    /**
+     * 修改套餐
+     * @param setmealDTO
+     */
+    @Override
+    public void update(SetmealDTO setmealDTO) {
+        //修改套餐基础信息
+        Setmeal setmeal = new Setmeal();
+        BeanUtils.copyProperties(setmealDTO,setmeal);
+        setmealMapper.update(setmeal);
+        //修改套餐跟菜品之间的关系
+        Long mealId = setmealDTO.getId();
+        //1 全删除
+        setMealDishMapper.deleteByMealId(mealId);
+        //2 再重新建立关系
+        List<SetmealDish> setmealDishes = setmealDTO.getSetmealDishes();
+        if(setmealDishes.isEmpty() || setmealDishes.size() == 0){
+            return;
+        }
+        for (SetmealDish setmealDish : setmealDishes) {
+            setmealDish.setSetmealId(mealId);
+            Long dishId = dishMapper.getDishIdByName(setmealDish.getName());
+            setmealDish.setDishId(dishId);
+        }
+        setMealDishMapper.insertBatch(setmealDishes);
+    }
+
+    @Override
+    public SetmealDTO getById(Long id) {
+        Setmeal setmeal = setmealMapper.getById(id);
+        List<SetmealDish> list  = setMealDishMapper.getListByMealId(id);
+        SetmealDTO setmealDTO = new SetmealDTO();
+        BeanUtils.copyProperties(setmeal,setmealDTO);
+        setmealDTO.setSetmealDishes(list);
+        return setmealDTO;
     }
 }

@@ -53,4 +53,20 @@ public class SetMealController {
         setMealService.deleteBatch(ids);
         return Result.success();
     }
+
+    @GetMapping("/{id}")
+    @ApiOperation("根据id查询套餐")
+    public Result<SetmealDTO> getById(@PathVariable Long id){
+        log.info("正在根据id{}查询套餐",id);
+        SetmealDTO setmealDTO = setMealService.getById(id);
+        return Result.success(setmealDTO);
+    }
+
+    @PutMapping
+    @ApiOperation("修改套餐")
+    public Result update(@RequestBody SetmealDTO setmealDTO){
+        log.info("正在修改套餐为{}",setmealDTO);
+        setMealService.update(setmealDTO);
+        return Result.success();
+    }
 }
