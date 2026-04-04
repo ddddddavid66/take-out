@@ -38,10 +38,19 @@ public class SetMealController {
     }
 
     @GetMapping("page")
+    @ApiOperation("套餐分页查询实现")
     public Result pageQuery(SetmealPageQueryDTO setmealPageQueryDTO){
         log.info("正在执行套餐分页查询{}",setmealPageQueryDTO);
         PageResult pageResult = setMealService.pageQuery(setmealPageQueryDTO);
         return Result.success(pageResult);
     }
 
+
+    @DeleteMapping
+    @ApiOperation("删除套餐")
+    public Result deleteBatch(@RequestParam List<Long> ids){
+        log.info("正在删除id为{}的套餐",ids);
+        setMealService.deleteBatch(ids);
+        return Result.success();
+    }
 }

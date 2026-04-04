@@ -57,4 +57,12 @@ public class SetMealServiceImpl implements SetMealService {
         List<Setmeal> list = page.getResult();
         return new PageResult(total,list);
     }
+
+    @Override
+    public void deleteBatch(List<Long> ids) {
+        if(ids.isEmpty() || ids.size() == 0){
+            return;
+        }
+        setmealMapper.deleteBatch(ids);
+    }
 }

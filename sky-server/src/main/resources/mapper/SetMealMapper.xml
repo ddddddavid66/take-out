@@ -15,4 +15,10 @@
             <if test="categoryId != null" >and category_id = #{categoryId}</if>
         </where>
     </select>
+    <delete id="deleteBatch">
+delete from setmeal where id in
+                    <foreach collection="ids" separator="," item="id" open="(" close=")">
+                        #{id}
+                    </foreach>
+    </delete>
 </mapper>

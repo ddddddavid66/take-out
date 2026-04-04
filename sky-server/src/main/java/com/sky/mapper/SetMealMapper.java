@@ -8,6 +8,8 @@ import com.sky.enumeration.OperationType;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+
 @Mapper
 public interface SetMealMapper {
 
@@ -28,4 +30,10 @@ public interface SetMealMapper {
      * @return
      */
     Page<Setmeal> pageQuery(SetmealPageQueryDTO setmealPageQueryDTO);
+
+    /**
+     * 批量删除
+     * @param ids
+     */
+    void deleteBatch(List<Long> ids);
 }
