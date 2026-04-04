@@ -2,6 +2,7 @@ package com.sky.service;
 
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
+import com.sky.entity.Setmeal;
 import com.sky.result.PageResult;
 import org.apache.ibatis.annotations.Select;
 
@@ -18,4 +19,6 @@ public interface SetMealService {
     void update(SetmealDTO setmealDTO);
 
     SetmealDTO getById(Long id);
+
+    void startOrStop(Integer status, Long id);
 }

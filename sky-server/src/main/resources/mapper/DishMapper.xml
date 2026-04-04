@@ -34,4 +34,13 @@ update dish <set>
     </set>
 where id = #{id}
     </update>
+    <update id="updateStatus">
+        update dish
+        <set>
+            status = #{status},
+            <if test="dish.updateTime != null">update_time = #{dish.updateTime}</if>
+            <if test="dish.updateUser != null">update_user = #{dish.updateUser}</if>
+        </set>
+         where id = #{dish.id}
+    </update>
 </mapper>

@@ -6,10 +6,7 @@ import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.enumeration.OperationType;
 import com.sky.vo.DishVO;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -62,4 +59,7 @@ public interface DishMapper {
 
     @Select("select id from dish where name = #{name}")
     Long getDishIdByName(String name);
+
+    @AutoFill(OperationType.UPDATE)
+    void updateStatus(@Param("dish") Dish dish, @Param("status") Integer status);
 }

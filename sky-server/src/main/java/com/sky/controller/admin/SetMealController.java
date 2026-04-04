@@ -3,6 +3,7 @@ package com.sky.controller.admin;
 import com.sky.dto.SetmealDTO;
 import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Dish;
+import com.sky.entity.Setmeal;
 import com.sky.result.PageResult;
 import com.sky.result.Result;
 import com.sky.service.DishService;
@@ -67,6 +68,14 @@ public class SetMealController {
     public Result update(@RequestBody SetmealDTO setmealDTO){
         log.info("正在修改套餐为{}",setmealDTO);
         setMealService.update(setmealDTO);
+        return Result.success();
+    }
+
+    @PostMapping("/status/{status}")
+    @ApiOperation("套餐状态修改")
+    public Result startOrStop(@PathVariable Integer status,Long id){
+        log.info("正在修改套餐{}的状态为{}",id,status);
+        setMealService.startOrStop(status,id);
         return Result.success();
     }
 }

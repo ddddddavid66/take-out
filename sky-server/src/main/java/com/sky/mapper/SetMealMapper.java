@@ -6,6 +6,7 @@ import com.sky.dto.SetmealPageQueryDTO;
 import com.sky.entity.Setmeal;
 import com.sky.enumeration.OperationType;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
@@ -27,7 +28,7 @@ public interface SetMealMapper {
 
     /**
      * 分页查询套餐
-     * @param setmealMapper
+     * @param
      * @return
      */
     Page<Setmeal> pageQuery(SetmealPageQueryDTO setmealPageQueryDTO);
@@ -43,4 +44,8 @@ public interface SetMealMapper {
 
     @Select("select * from setmeal where id = #{id}")
     Setmeal getById(Long id);
+
+
+    @AutoFill(OperationType.UPDATE)
+    void updateStatus(@Param("setmeal") Setmeal setmeal,@Param("status") Integer status);
 }
