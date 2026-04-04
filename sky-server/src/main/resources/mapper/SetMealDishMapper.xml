@@ -9,10 +9,10 @@
         </foreach>
     </select>
     <insert id="insertBatch" >
-insert into setmeal_dish (id, setmeal_id, dish_id, name, price, copies)
+insert into setmeal_dish (setmeal_id, dish_id, name, price, copies)
 values
     <foreach collection="setMealDishes" item="md" separator=",">
-        (#{md.id},#{md.setmealId},#{md.name},#{md.price},#{md.copies})
+        (#{md.setmealId},#{md.dishId},#{md.name},#{md.price},#{md.copies})
     </foreach>
     </insert>
 

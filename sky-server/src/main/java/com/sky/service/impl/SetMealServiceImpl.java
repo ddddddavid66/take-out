@@ -3,6 +3,7 @@ package com.sky.service.impl;
 import com.sky.dto.SetmealDTO;
 import com.sky.entity.Setmeal;
 import com.sky.entity.SetmealDish;
+import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetMealDishMapper;
 import com.sky.mapper.SetMealMapper;
 import com.sky.service.SetMealService;
@@ -19,6 +20,8 @@ public class SetMealServiceImpl implements SetMealService {
     private SetMealMapper setmealMapper;
     @Autowired
     private SetMealDishMapper setMealDishMapper;
+    @Autowired
+    private DishMapper dishMapper;
 
     @Override
     public void saveWithDish(SetmealDTO setmealDTO) {
@@ -35,7 +38,9 @@ public class SetMealServiceImpl implements SetMealService {
             return;
         }
         for (SetmealDish setMealDish : setMealDishes) {
-            setMealDish.setId(MealId);
+            setMealDish.setSetmealId(MealId);
+            Long dishId = dishMapper.getDishIdByName(setMealDish.getName());
+            setMealDish.setDishId(dishId);
         }
         setMealDishMapper.insertBatch(setMealDishes);
     }
