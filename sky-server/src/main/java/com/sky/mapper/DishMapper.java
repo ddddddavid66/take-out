@@ -62,4 +62,6 @@ public interface DishMapper {
 
     @AutoFill(OperationType.UPDATE)
     void updateStatus(@Param("dish") Dish dish, @Param("status") Integer status);
+
+
 }
