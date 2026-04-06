@@ -44,7 +44,7 @@ sky:
     admin-token-name: token
     user-secret-key: itheima
     user-ttl: 7200000
-    user-token-name:  authorization #与前端商量好的
+    user-token-name:  authentication #与前端商量好的
   wechat:
     appid:
     secret:

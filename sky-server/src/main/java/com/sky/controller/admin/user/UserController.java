@@ -37,7 +37,7 @@ public class UserController {
         User user = userService.wxLogin(userLoginDTO);//获取openid
         //JWT
         HashMap<String, Object> claims = new HashMap<>();
-        claims.put(JwtClaimsConstant.USER_ID,user.getOpenid());
+        claims.put(JwtClaimsConstant.USER_ID,user.getId());
         String token = JwtUtil.createJWT(jwtProperties.getUserSecretKey(), jwtProperties.getUserTtl(), claims);
 
         UserLoginVO userLoginVO = UserLoginVO.builder()
