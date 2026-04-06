@@ -54,8 +54,7 @@ public interface DishMapper {
      * @param categoryId
      * @return
      */
-    @Select("select * from dish where category_id = #{categoryId}")
-    List<Dish> getByCategotyId(Integer categoryId);
+    List<Dish> getByCategotyId(@Param("categoryId") Integer categoryId, @Param("status") Integer status);
 
     @Select("select id from dish where name = #{name}")
     Long getDishIdByName(String name);

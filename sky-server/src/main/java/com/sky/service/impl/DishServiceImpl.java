@@ -47,7 +47,7 @@ public class DishServiceImpl implements DishService {
         Long dishId = dish.getId();
         //插入口味表 m个
         List<DishFlavor> flavors = dishDTO.getFlavors();
-        if (flavors.isEmpty() || flavors.size() == 0) {
+        if (flavors == null || flavors.isEmpty()) {
             return;
         }
         for (DishFlavor flavor : flavors) {
@@ -122,13 +122,15 @@ public class DishServiceImpl implements DishService {
         dishFlavorMapper.deleteByDishIds(dishIds);
 //        添加新的口味
         List<DishFlavor> flavors = dishDTO.getFlavors();
-        flavors.forEach(flavor -> {flavor.setDishId(dish.getId());});
-        dishFlavorMapper.insertBatch(flavors);
+        if (flavors != null && !flavors.isEmpty()) {
+            flavors.forEach(flavor -> {flavor.setDishId(dish.getId());});
+            dishFlavorMapper.insertBatch(flavors);
+        }
     }
 
     @Override
-    public List<Dish> getByCategotyId(Integer categoryId) {
-        List<Dish> dishList =  dishMapper.getByCategotyId(categoryId);
+    public List<Dish> getByCategotyId(Integer categoryId, Integer status) {
+        List<Dish> dishList =  dishMapper.getByCategotyId(categoryId, status);
         return dishList;
     }
 
@@ -147,7 +149,7 @@ public class DishServiceImpl implements DishService {
     public List<DishVO> listWithFlavor(Dish dish) {
         Long categoryId1 =  dish.getCategoryId();
         Integer categoryId = categoryId1.intValue();
-        List<Dish> dishList = dishMapper.getByCategotyId(categoryId);
+        List<Dish> dishList = dishMapper.getByCategotyId(categoryId, dish.getStatus());
 
         List<DishVO> dishVOList = new ArrayList<>();
 
