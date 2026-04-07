@@ -1,4 +1,4 @@
-package com.sky.dto;
+package com.sky.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sky.entity.OrderDetail;
@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class OrdersDTO implements Serializable {
+public class OrdersVO implements Serializable {
 
     private Long id;
 
@@ -54,6 +54,6 @@ public class OrdersDTO implements Serializable {
     //收货人
     private String consignee;
 
-    private List<OrderDetail> orderDetails;
+    private List<OrderDetail> orderDetailList;
 
 }

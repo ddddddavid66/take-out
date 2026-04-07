@@ -21,4 +21,10 @@ insert into orders (number, user_id, address_book_id, order_time, checkout_time,
         </set>
         where id = #{id}
     </update>
+    <select id="queryByUserId" resultType="com.sky.entity.Orders">
+select * from orders <where>
+        <if test="userId != null">and user_id = #{userId}</if>
+        <if test="status != null">and status = #{status}</if>
+    </where>
+    </select>
 </mapper>
