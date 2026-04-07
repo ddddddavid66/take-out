@@ -33,4 +33,6 @@ public interface OrderService {
     OrderDetailVO detailsQuery(Long orderId);
 
     void cancel(Long orderId);
+
+    void repetition(Long orderId);
 }

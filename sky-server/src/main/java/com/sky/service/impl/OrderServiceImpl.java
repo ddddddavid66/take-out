@@ -5,6 +5,7 @@ import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
+import com.sky.controller.admin.user.OrderController;
 import com.sky.dto.OrdersDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
@@ -50,6 +51,8 @@ public class OrderServiceImpl implements OrderService {
     private WeChatPayUtil weChatPayUtil;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private OrderController orderController;
 
     private static final int PACK_AMOUNT = 6;
     /**
@@ -250,6 +253,27 @@ public class OrderServiceImpl implements OrderService {
         Long userId = BaseContext.getCurrentId();
         Orders orders =  orderMapper.queryByUserOrderId(userId,orderId);
         orderMapper.updateStatus(Orders.CANCELLED,Orders.UN_PAID,LocalDateTime.now(),orders.getNumber());
+    }
+
+    @Override
+    public void repetition(Long orderId) {
+        Long userId = BaseContext.getCurrentId();
+        Orders orders =  orderMapper.queryByUserOrderId(userId,orderId);
+        OrdersSubmitDTO ordersSubmitDTO = new OrdersSubmitDTO();
+        BeanUtils.copyProperties(orders,ordersSubmitDTO);
+        LocalDateTime now = LocalDateTime.now();
+        now.plusHours(1);
+        ordersSubmitDTO.setEstimatedDeliveryTime(now);
+        //插入购物车数据
+        List<OrderDetail>  orderDetailList = orderDetailMapper.queryByOrderId(orderId);
+        for (OrderDetail orderDetail : orderDetailList) {
+            ShoppingCart shoppingCart = new ShoppingCart();
+            BeanUtils.copyProperties(orderDetail,shoppingCart);
+            shoppingCart.setCreateTime(LocalDateTime.now());
+            shoppingCart.setUserId(userId);
+            shoppingCartMapper.insert(shoppingCart);
+        }
+        orderController.submit(ordersSubmitDTO);
     }
 
 
