@@ -31,4 +31,7 @@ public interface OrderMapper {
     void updateStatus(Integer orderStatus, Integer orderPaidStatus, LocalDateTime checkOutTime, String orderNumber);
 
     Page<Orders> queryByUserId(Integer status, Long userId);
+
+    @Select("select * from orders where user_id  =#{userId} and id = #{orderId}")
+    Orders queryDetail(Long userId, Long orderId);
 }

@@ -8,7 +8,13 @@
             (#{od.name},#{od.image},#{od.orderId},#{od.dishId},#{od.setmealId},#{od.dishFlavor},#{od.amount})
         </foreach>
     </insert>
-    <select id="queryByOrderIds" resultType="com.sky.entity.OrderDetail">
+    <select id="queryByOrderId" resultType="com.sky.entity.OrderDetail">
         select * from order_detail where order_id = #{orderId}
+    </select>
+    <select id="queryByOrderIds" resultType="com.sky.entity.OrderDetail">
+        select * from order_detail where order_id in
+            <foreach collection="orderIds" item="orderId" separator="," open="(" close=")">
+                #{orderId}
+            </foreach>
     </select>
 </mapper>

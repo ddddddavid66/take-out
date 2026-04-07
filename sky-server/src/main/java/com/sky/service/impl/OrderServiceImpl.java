@@ -17,6 +17,7 @@ import com.sky.mapper.*;
 import com.sky.result.PageResult;
 import com.sky.service.OrderService;
 import com.sky.utils.WeChatPayUtil;
+import com.sky.vo.OrderDetailVO;
 import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrdersVO;
@@ -30,6 +31,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -46,6 +50,8 @@ public class OrderServiceImpl implements OrderService {
     private WeChatPayUtil weChatPayUtil;
     @Autowired
     private UserMapper userMapper;
+
+    private static final int PACK_AMOUNT = 6;
     /**
      * 用户下单的方法
      * @param ordersSubmitDTO
@@ -79,6 +85,15 @@ public class OrderServiceImpl implements OrderService {
         orders.setPhone(addressBook.getPhone());
         orders.setConsignee(addressBook.getConsignee());
         orders.setAddress(addressBook.getDetail());
+        orders.setPackAmount(PACK_AMOUNT);
+        orders.setDeliveryStatus(ordersSubmitDTO.getDeliveryStatus());
+        orders.setRemark(ordersSubmitDTO.getRemark());
+        orders.setTablewareNumber(ordersSubmitDTO.getTablewareNumber());
+        orders.setTablewareStatus(ordersSubmitDTO.getTablewareStatus());
+        orders.setAmount(ordersSubmitDTO.getAmount());
+        orders.setAddressBookId(ordersSubmitDTO.getAddressBookId());
+        orders.setPayMethod(ordersSubmitDTO.getPayMethod());
+        orders.setEstimatedDeliveryTime(ordersSubmitDTO.getEstimatedDeliveryTime());
         orderMapper.insert(orders);
         //订单明细表 插入 n条
         Long orderId = orders.getId();//主键返回
@@ -172,23 +187,54 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public PageResult historyQuery(OrdersPageQueryDTO ordersPageQueryDTO) {
-        //先查询获得 订单
         PageHelper.startPage(ordersPageQueryDTO.getPage(),ordersPageQueryDTO.getPageSize());
+        //先查询获得 订单
         Long userId = BaseContext.getCurrentId();
         Page<Orders> page = orderMapper.queryByUserId(ordersPageQueryDTO.getStatus(),userId);
         List<Orders> result = page.getResult();
+
         //再查询 订单的具体内容 查询details表  合并生产OrdersDto
-        List<OrdersVO> newList = new ArrayList<>();
+       /* List<OrdersVO> newList = new ArrayList<>();
         for (Orders orders : result) {
             OrdersVO ordersVO = new OrdersVO();
             BeanUtils.copyProperties(orders,ordersVO);
-            List<OrderDetail>  orderDetailList = orderDetailMapper.queryByOrderIds(orders.getId());
+            List<OrderDetail>  orderDetailList = orderDetailMapper.queryByOrderId(orders.getId());
             ordersVO.setOrderDetailList( orderDetailList);
             newList.add(ordersVO);
+        }*/
+
+        //优化 stream流获取所有的orderDetail 然后转换成Map集合
+        List<Long> orderIds = new ArrayList<>();
+        for (Orders orders : result) {
+            orderIds.add(orders.getId());
         }
-        PageResult pageResult = new PageResult(page.getTotal(),newList);
+        List<OrderDetail>  orderDetailLists = orderDetailMapper.queryByOrderIds(orderIds);
+        Map<Long, List<OrderDetail>> detailMap = orderDetailLists.stream()
+                .collect(Collectors.groupingBy(OrderDetail::getOrderId)); //stream流
+        List<OrdersVO> list = result.stream().map( orders -> {
+                OrdersVO ordersVO = new OrdersVO();
+                BeanUtils.copyProperties(orders,ordersVO);
+                ordersVO.setOrderDetailList(detailMap.get(ordersVO.getId()));
+                return ordersVO;
+        }).collect(Collectors.toList());
+        PageResult pageResult = new PageResult(page.getTotal(),list);
         return pageResult;
     }
 
+    /**
+     * 实现历史订单具体查询
+     * @param orderId
+     * @return
+     */
+    @Override
+    public OrderDetailVO detailsQuery(Long orderId) {
+        Long userId = BaseContext.getCurrentId();
+        Orders orders =  orderMapper.queryDetail(userId,orderId);
+        List<OrderDetail>  orderDetailList = orderDetailMapper.queryByOrderId(orderId);
+        OrderDetailVO orderDetailVO = new OrderDetailVO();
+        BeanUtils.copyProperties(orders,orderDetailVO);
+        orderDetailVO.setOrderDetailList(orderDetailList);
+        return orderDetailVO;
+    }
 
 }

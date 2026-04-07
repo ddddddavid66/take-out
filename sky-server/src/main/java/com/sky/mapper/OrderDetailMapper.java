@@ -9,5 +9,7 @@ import java.util.List;
 public interface OrderDetailMapper {
     public void insertBatch(List<OrderDetail> list2);
 
-    List<OrderDetail> queryByOrderIds(Long orderId);
+    List<OrderDetail> queryByOrderId(Long orderId);
+
+    List<OrderDetail> queryByOrderIds(List<Long> orderIds);
 }
