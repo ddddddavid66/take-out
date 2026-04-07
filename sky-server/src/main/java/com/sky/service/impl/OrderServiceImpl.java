@@ -232,9 +232,25 @@ public class OrderServiceImpl implements OrderService {
         Orders orders =  orderMapper.queryDetail(userId,orderId);
         List<OrderDetail>  orderDetailList = orderDetailMapper.queryByOrderId(orderId);
         OrderDetailVO orderDetailVO = new OrderDetailVO();
+        if(orders == null){
+           throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
         BeanUtils.copyProperties(orders,orderDetailVO);
         orderDetailVO.setOrderDetailList(orderDetailList);
         return orderDetailVO;
     }
+
+    /**
+     * 取消订单
+     * @param orderId
+     */
+    @Override
+    public void cancel(Long orderId) {
+        //订单设置为已取消 而不是删除
+        Long userId = BaseContext.getCurrentId();
+        Orders orders =  orderMapper.queryByUserOrderId(userId,orderId);
+        orderMapper.updateStatus(Orders.CANCELLED,Orders.UN_PAID,LocalDateTime.now(),orders.getNumber());
+    }
+
 
 }

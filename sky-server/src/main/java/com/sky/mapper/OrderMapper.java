@@ -4,6 +4,7 @@ import com.github.pagehelper.Page;
 import com.sky.dto.OrdersDTO;
 import com.sky.entity.Orders;
 import io.swagger.models.auth.In;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
@@ -34,4 +35,10 @@ public interface OrderMapper {
 
     @Select("select * from orders where user_id  =#{userId} and id = #{orderId}")
     Orders queryDetail(Long userId, Long orderId);
+
+    @Delete("delete from orders where id = #{orderId}")
+    void deleteByOrderId(Long orderId);
+
+    @Select("select * from orders where id = #{orderId} and user_id = #{userId}")
+    Orders  queryByUserOrderId(Long userId, Long orderId);
 }
