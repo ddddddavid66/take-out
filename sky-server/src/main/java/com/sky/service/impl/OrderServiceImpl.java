@@ -6,6 +6,7 @@ import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.controller.admin.user.OrderController;
+import com.sky.dto.OrdersConfirmDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
@@ -223,7 +224,7 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public OrderDetailVO detailsQuery(Long orderId) {
-        Orders orders = orderMapper.queryDetailAdmin(orderId);
+        Orders orders = orderMapper.queryByOrderId(orderId);
         List<OrderDetail> orderDetailList = orderDetailMapper.queryByOrderId(orderId);
         OrderDetailVO orderDetailVO = new OrderDetailVO();
         if (orders == null) {
@@ -314,6 +315,17 @@ public class OrderServiceImpl implements OrderService {
         return orderStatisticsVO;
     }
 
+    /**
+     * 商家接单
+     * @param ordersConfirmDTO
+     */
+    @Override
+    public void confirm(OrdersConfirmDTO ordersConfirmDTO) {
+        //根据id查询单子
+        Orders orders =  orderMapper.queryByOrderId(ordersConfirmDTO.getId());
+        orderMapper.updateStatus(Orders.CONFIRMED,orders.getPayStatus(),orders.getCheckoutTime(),orders.getNumber());
+    }
+
 
     public Map<Long, List<OrderDetail>> getOrderDetailMap(List<Orders> result) {
         List<Long> orderIds = new ArrayList<>();
@@ -325,6 +337,8 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.groupingBy(OrderDetail::getOrderId)); //stream流
         return detailMap;
     }
+
+
 
 
 

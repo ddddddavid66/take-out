@@ -54,5 +54,6 @@ public interface OrderMapper {
     Integer queryStatus(Integer Status);
 
     @Select("select * from orders where  id = #{orderId}")
-    Orders queryDetailAdmin(Long orderId);
+    Orders queryByOrderId(Long orderId);
+
 }
