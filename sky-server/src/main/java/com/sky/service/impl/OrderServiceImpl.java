@@ -6,10 +6,7 @@ import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.controller.admin.user.OrderController;
-import com.sky.dto.OrdersConfirmDTO;
-import com.sky.dto.OrdersPageQueryDTO;
-import com.sky.dto.OrdersPaymentDTO;
-import com.sky.dto.OrdersSubmitDTO;
+import com.sky.dto.*;
 import com.sky.entity.*;
 import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
@@ -25,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -325,6 +323,69 @@ public class OrderServiceImpl implements OrderService {
         Orders orders =  orderMapper.queryByOrderId(ordersConfirmDTO.getId());
         orderMapper.updateStatus(Orders.CONFIRMED,orders.getPayStatus(),orders.getCheckoutTime(),orders.getNumber());
     }
+
+    /**
+     * 商家拒单
+     * @param ordersRejectionDTO
+     */
+    @Override
+    public void rejection(OrdersRejectionDTO ordersRejectionDTO) {
+        Orders orders = orderMapper.queryByOrderId(ordersRejectionDTO.getId());
+        //检验是 待接单
+        if(orders.getStatus() != Orders.TO_BE_CONFIRMED){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        //检验用户是否支付
+//        if(orders.getPayStatus() == Orders.PAID){
+//            try {
+//                String refund = weChatPayUtil.refund(orders.getNumber(),
+//                        orders.getNumber(),
+//                        new BigDecimal(0.01),
+//                        new BigDecimal(0.01));
+//                log.info("退款{}",refund);
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+        orders.setStatus(Orders.CANCELLED);
+        orders.setPayStatus(Orders.REFUND);
+        orders.setRejectionReason(ordersRejectionDTO.getRejectionReason());
+        orders.setCancelTime(LocalDateTime.now());
+        orderMapper.update(orders);
+    }
+
+    /**
+     * 商家取消订单
+     * @param ordersCancelDTO
+     */
+    @Override
+    public void cancelOrder(OrdersCancelDTO ordersCancelDTO) {
+        Orders orders = orderMapper.queryByOrderId(ordersCancelDTO.getId());
+        //检验是 待配送
+        if(orders.getStatus() != Orders.CONFIRMED){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        //检验用户是否支付
+//        if(orders.getPayStatus() == Orders.PAID){
+//            try {
+//                String refund = weChatPayUtil.refund(orders.getNumber(),
+//                        orders.getNumber(),
+//                        new BigDecimal(0.01),
+//                        new BigDecimal(0.01));
+//                log.info("退款{}",refund);
+//            } catch (Exception e) {
+//                throw new RuntimeException(e);
+//            }
+//        }
+        orders.setCancelTime(LocalDateTime.now());
+        orders.setStatus(Orders.CANCELLED);
+        orders.setCancelReason(ordersCancelDTO.getCancelReason());
+        orders.setPayStatus(Orders.REFUND);
+        orderMapper.update(orders);
+    }
+
+
+
 
 
     public Map<Long, List<OrderDetail>> getOrderDetailMap(List<Orders> result) {
