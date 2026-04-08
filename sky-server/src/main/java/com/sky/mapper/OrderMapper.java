@@ -2,6 +2,7 @@ package com.sky.mapper;
 
 import com.github.pagehelper.Page;
 import com.sky.dto.OrdersDTO;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import io.swagger.models.auth.In;
 import org.apache.ibatis.annotations.Delete;
@@ -33,7 +34,7 @@ public interface OrderMapper {
 
     Page<Orders> queryByUserId(Integer status, Long userId);
 
-    @Select("select * from orders where user_id  =#{userId} and id = #{orderId}")
+    @Select("select * from orders where user_id  = #{userId} and id = #{orderId}")
     Orders queryDetail(Long userId, Long orderId);
 
     @Delete("delete from orders where id = #{orderId}")
@@ -41,4 +42,17 @@ public interface OrderMapper {
 
     @Select("select * from orders where id = #{orderId} and user_id = #{userId}")
     Orders  queryByUserOrderId(Long userId, Long orderId);
+
+    /**
+     * 管理端实现分页查询
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    Page<Orders> pageQuery(OrdersPageQueryDTO ordersPageQueryDTO);
+
+    @Select("select count(*) from orders where status = #{Status}")
+    Integer queryStatus(Integer Status);
+
+    @Select("select * from orders where  id = #{orderId}")
+    Orders queryDetailAdmin(Long orderId);
 }

@@ -6,7 +6,6 @@ import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
 import com.sky.controller.admin.user.OrderController;
-import com.sky.dto.OrdersDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersPaymentDTO;
 import com.sky.dto.OrdersSubmitDTO;
@@ -18,22 +17,17 @@ import com.sky.mapper.*;
 import com.sky.result.PageResult;
 import com.sky.service.OrderService;
 import com.sky.utils.WeChatPayUtil;
-import com.sky.vo.OrderDetailVO;
-import com.sky.vo.OrderPaymentVO;
-import com.sky.vo.OrderSubmitVO;
-import com.sky.vo.OrdersVO;
+import com.sky.vo.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -55,8 +49,10 @@ public class OrderServiceImpl implements OrderService {
     private OrderController orderController;
 
     private static final int PACK_AMOUNT = 6;
+
     /**
      * 用户下单的方法
+     *
      * @param ordersSubmitDTO
      * @return
      */
@@ -68,17 +64,17 @@ public class OrderServiceImpl implements OrderService {
         Long userId = BaseContext.getCurrentId();
         AddressBook addressBook = addressBookMapper.getById(addressBookId);
         //1 检验收货地址 为空  而建立收货地址表明 地址 手机号不为空
-        if(addressBook == null){
+        if (addressBook == null) {
             throw new AddressBookBusinessException(MessageConstant.ADDRESS_BOOK_IS_NULL);
         }
         ShoppingCart shoppingCart = ShoppingCart.builder().userId(userId).build();
         List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
-        if(list == null || list.size() == 0){
+        if (list == null || list.size() == 0) {
             throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_IS_NULL);
         }
         //订单表 插入 1条
         Orders orders = new Orders();
-        BeanUtils.copyProperties(ordersSubmitDTO,orders);
+        BeanUtils.copyProperties(ordersSubmitDTO, orders);
         orders.setUserId(userId);
         orders.setUserName("wx_" + userId);
         orders.setOrderTime(LocalDateTime.now());
@@ -103,7 +99,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderDetail> list2 = new ArrayList<>();
         for (ShoppingCart cart : list) {
             OrderDetail orderDetail = new OrderDetail();
-            BeanUtils.copyProperties(cart,orderDetail); //发现 二者相似
+            BeanUtils.copyProperties(cart, orderDetail); //发现 二者相似
             //但是购物车没 orderId
             orderDetail.setOrderId(orderId);
             list2.add(orderDetail);
@@ -185,15 +181,16 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 历史订单查询
+     *
      * @param ordersPageQueryDTO
      * @return
      */
     @Override
     public PageResult historyQuery(OrdersPageQueryDTO ordersPageQueryDTO) {
-        PageHelper.startPage(ordersPageQueryDTO.getPage(),ordersPageQueryDTO.getPageSize());
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
         //先查询获得 订单
         Long userId = BaseContext.getCurrentId();
-        Page<Orders> page = orderMapper.queryByUserId(ordersPageQueryDTO.getStatus(),userId);
+        Page<Orders> page = orderMapper.queryByUserId(ordersPageQueryDTO.getStatus(), userId);
         List<Orders> result = page.getResult();
 
         //再查询 订单的具体内容 查询details表  合并生产OrdersDto
@@ -207,74 +204,128 @@ public class OrderServiceImpl implements OrderService {
         }*/
 
         //优化 stream流获取所有的orderDetail 然后转换成Map集合
-        List<Long> orderIds = new ArrayList<>();
-        for (Orders orders : result) {
-            orderIds.add(orders.getId());
-        }
-        List<OrderDetail>  orderDetailLists = orderDetailMapper.queryByOrderIds(orderIds);
-        Map<Long, List<OrderDetail>> detailMap = orderDetailLists.stream()
-                .collect(Collectors.groupingBy(OrderDetail::getOrderId)); //stream流
-        List<OrdersVO> list = result.stream().map( orders -> {
-                OrdersVO ordersVO = new OrdersVO();
-                BeanUtils.copyProperties(orders,ordersVO);
-                ordersVO.setOrderDetailList(detailMap.get(ordersVO.getId()));
-                return ordersVO;
+        Map<Long, List<OrderDetail>> detailMap = getOrderDetailMap(result);
+        List<OrdersVO> list = result.stream().map(orders -> {
+            OrdersVO ordersVO = new OrdersVO();
+            BeanUtils.copyProperties(orders, ordersVO);
+            ordersVO.setOrderDetailList(detailMap.get(ordersVO.getId()));
+            return ordersVO;
         }).collect(Collectors.toList());
-        PageResult pageResult = new PageResult(page.getTotal(),list);
+        PageResult pageResult = new PageResult(page.getTotal(), list);
         return pageResult;
     }
 
     /**
      * 实现历史订单具体查询
+     *
      * @param orderId
      * @return
      */
     @Override
     public OrderDetailVO detailsQuery(Long orderId) {
-        Long userId = BaseContext.getCurrentId();
-        Orders orders =  orderMapper.queryDetail(userId,orderId);
-        List<OrderDetail>  orderDetailList = orderDetailMapper.queryByOrderId(orderId);
+        Orders orders = orderMapper.queryDetailAdmin(orderId);
+        List<OrderDetail> orderDetailList = orderDetailMapper.queryByOrderId(orderId);
         OrderDetailVO orderDetailVO = new OrderDetailVO();
-        if(orders == null){
-           throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        if (orders == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
         }
-        BeanUtils.copyProperties(orders,orderDetailVO);
+        BeanUtils.copyProperties(orders, orderDetailVO);
         orderDetailVO.setOrderDetailList(orderDetailList);
         return orderDetailVO;
     }
 
     /**
      * 取消订单
+     *
      * @param orderId
      */
     @Override
     public void cancel(Long orderId) {
         //订单设置为已取消 而不是删除
         Long userId = BaseContext.getCurrentId();
-        Orders orders =  orderMapper.queryByUserOrderId(userId,orderId);
-        orderMapper.updateStatus(Orders.CANCELLED,Orders.UN_PAID,LocalDateTime.now(),orders.getNumber());
+        Orders orders = orderMapper.queryByUserOrderId(userId, orderId);
+        orderMapper.updateStatus(Orders.CANCELLED, Orders.UN_PAID, LocalDateTime.now(), orders.getNumber());
     }
 
     @Override
     public void repetition(Long orderId) {
         Long userId = BaseContext.getCurrentId();
-        Orders orders =  orderMapper.queryByUserOrderId(userId,orderId);
+        Orders orders = orderMapper.queryByUserOrderId(userId, orderId);
         OrdersSubmitDTO ordersSubmitDTO = new OrdersSubmitDTO();
-        BeanUtils.copyProperties(orders,ordersSubmitDTO);
+        BeanUtils.copyProperties(orders, ordersSubmitDTO);
         LocalDateTime now = LocalDateTime.now();
         now.plusHours(1);
         ordersSubmitDTO.setEstimatedDeliveryTime(now);
         //插入购物车数据
-        List<OrderDetail>  orderDetailList = orderDetailMapper.queryByOrderId(orderId);
+        List<OrderDetail> orderDetailList = orderDetailMapper.queryByOrderId(orderId);
         for (OrderDetail orderDetail : orderDetailList) {
             ShoppingCart shoppingCart = new ShoppingCart();
-            BeanUtils.copyProperties(orderDetail,shoppingCart);
+            BeanUtils.copyProperties(orderDetail, shoppingCart);
             shoppingCart.setCreateTime(LocalDateTime.now());
             shoppingCart.setUserId(userId);
             shoppingCartMapper.insert(shoppingCart);
         }
         orderController.submit(ordersSubmitDTO);
     }
+
+    /**
+     * 管理端实现分页查询
+     *
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult pageQuery(OrdersPageQueryDTO ordersPageQueryDTO) {
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        Page<Orders> page = orderMapper.pageQuery(ordersPageQueryDTO);
+        long total = page.getTotal();
+        List<Orders> result = page.getResult();
+        Map<Long, List<OrderDetail>> detailMap = getOrderDetailMap(result);
+        List<OrderPageQueryVO> list = result.stream().map(orders -> {
+            OrderPageQueryVO orderPageQueryVO = new OrderPageQueryVO();
+            BeanUtils.copyProperties(orders, orderPageQueryVO);
+            List<OrderDetail> orderDetails = detailMap.get(orderPageQueryVO.getId());
+            StringBuilder stringBuilder = new StringBuilder();
+            for (int i = 0; i < orderDetails.size(); i++) {
+                if (i == orderDetails.size() - 1) {
+                    stringBuilder.append(orderDetails.get(i).getName());
+                    break;
+                }
+                stringBuilder.append(orderDetails.get(i).getName() + ",");
+            }
+            orderPageQueryVO.setOrderDishes(stringBuilder.toString());
+            return orderPageQueryVO;
+        }).collect(Collectors.toList());
+        PageResult pageResult = new PageResult(total, list);
+        return pageResult;
+    }
+
+    /**
+     * 管理端实现 查询订单状态统计
+     *
+     * @return
+     */
+    @Override
+    public OrderStatisticsVO statisticsQuery() {
+        OrderStatisticsVO orderStatisticsVO = new OrderStatisticsVO();
+        orderStatisticsVO.setToBeConfirmed(orderMapper.queryStatus(Orders.TO_BE_CONFIRMED));
+        orderStatisticsVO.setConfirmed(orderMapper.queryStatus(Orders.CONFIRMED));
+        orderStatisticsVO.setDeliveryInProgress(orderMapper.queryStatus(Orders.DELIVERY_IN_PROGRESS));
+        return orderStatisticsVO;
+    }
+
+
+    public Map<Long, List<OrderDetail>> getOrderDetailMap(List<Orders> result) {
+        List<Long> orderIds = new ArrayList<>();
+        for (Orders orders : result) {
+            orderIds.add(orders.getId());
+        }
+        List<OrderDetail> orderDetailLists = orderDetailMapper.queryByOrderIds(orderIds);
+        Map<Long, List<OrderDetail>> detailMap = orderDetailLists.stream()
+                .collect(Collectors.groupingBy(OrderDetail::getOrderId)); //stream流
+        return detailMap;
+    }
+
 
 
 }

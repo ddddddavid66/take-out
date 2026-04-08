@@ -6,6 +6,7 @@ import com.sky.dto.OrdersSubmitDTO;
 import com.sky.result.PageResult;
 import com.sky.vo.OrderDetailVO;
 import com.sky.vo.OrderPaymentVO;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 
 public interface OrderService {
@@ -35,4 +36,8 @@ public interface OrderService {
     void cancel(Long orderId);
 
     void repetition(Long orderId);
+
+    PageResult pageQuery(OrdersPageQueryDTO ordersPageQueryDTO);
+
+    OrderStatisticsVO statisticsQuery();
 }
