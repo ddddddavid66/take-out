@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -384,14 +385,44 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+    /**
+     * 商家实现派送订单
+     * @param orderId
+     */
+    @Override
+    public void delivery(Long orderId) {
+        Orders orders = orderMapper.queryByOrderId(orderId);
+        //判断是否是 已结单
+        if(orders.getStatus() != Orders.CONFIRMED){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        orders.setStatus(Orders.DELIVERY_IN_PROGRESS);
+        orderMapper.update(orders);
+    }
 
-
+    @Override
+    public void complete(Long orderId) {
+        Orders orders = orderMapper.queryByOrderId(orderId);
+        //判断是否是 配送种
+        if(orders.getStatus() != Orders.DELIVERY_IN_PROGRESS){
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+        orders.setStatus(Orders.COMPLETED);
+        orders.setDeliveryTime(LocalDateTime.now());
+        orderMapper.update(orders);
+    }
 
 
     public Map<Long, List<OrderDetail>> getOrderDetailMap(List<Orders> result) {
+        if(result == null || result.isEmpty()){
+            return new HashMap<>();
+        }
         List<Long> orderIds = new ArrayList<>();
         for (Orders orders : result) {
             orderIds.add(orders.getId());
+        }
+        if(orderIds.isEmpty()){
+            return new HashMap<>();
         }
         List<OrderDetail> orderDetailLists = orderDetailMapper.queryByOrderIds(orderIds);
         Map<Long, List<OrderDetail>> detailMap = orderDetailLists.stream()
