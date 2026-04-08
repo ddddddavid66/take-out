@@ -12,8 +12,11 @@ import com.sky.exception.AddressBookBusinessException;
 import com.sky.exception.OrderBusinessException;
 import com.sky.exception.ShoppingCartBusinessException;
 import com.sky.mapper.*;
+import com.sky.properties.BaiduProperties;
 import com.sky.result.PageResult;
 import com.sky.service.OrderService;
+import com.sky.utils.BaiduUtil;
+import com.sky.utils.CalcDistanceUtil;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.*;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,6 +49,10 @@ public class OrderServiceImpl implements OrderService {
     private UserMapper userMapper;
     @Autowired
     private OrderController orderController;
+    @Autowired
+    private BaiduUtil baiduUtil;
+    @Autowired
+    private BaiduProperties baiduProperties;
 
     private static final int PACK_AMOUNT = 6;
 
@@ -71,6 +77,25 @@ public class OrderServiceImpl implements OrderService {
         List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
         if (list == null || list.size() == 0) {
             throw new ShoppingCartBusinessException(MessageConstant.SHOPPING_CART_IS_NULL);
+        }
+        //检验距离 百度地图api
+        String address = baiduProperties.getAddress();
+        List<Double> userList;
+        List<Double> adminList;
+        try {
+            adminList = baiduUtil.requestGetAK(address);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        String addressUser = addressBook.getDetail();
+        try {
+            userList = baiduUtil.requestGetAK(addressUser);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        Double adminDisance = CalcDistanceUtil.getDistance1(adminList,userList);
+        if(adminDisance > 5000){
+            throw new OrderBusinessException(MessageConstant.ADDRESS_LONG);
         }
         //订单表 插入 1条
         Orders orders = new Orders();
