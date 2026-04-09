@@ -19,6 +19,7 @@ import com.sky.utils.BaiduUtil;
 import com.sky.utils.CalcDistanceUtil;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.*;
+import com.sky.websocket.WebSocketServer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,8 @@ public class OrderServiceImpl implements OrderService {
     private BaiduUtil baiduUtil;
     @Autowired
     private BaiduProperties baiduProperties;
+    @Autowired
+    private WebSocketServer webSocketServer;
 
     private static final int PACK_AMOUNT = 6;
 
@@ -87,7 +90,7 @@ public class OrderServiceImpl implements OrderService {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        String addressUser = addressBook.getDetail();
+        String addressUser = addressBook.getProvinceName() + addressBook.getDistrictName() + addressBook.getCityName() + addressBook.getDetail();
         try {
             userList = baiduUtil.requestGetAK(addressUser);
         } catch (Exception e) {
@@ -139,6 +142,13 @@ public class OrderServiceImpl implements OrderService {
                 .orderAmount(orders.getAmount())
                 .orderTime(orders.getOrderTime())
                 .build();
+        //通过webSocket 推送给浏览器
+        Map map = new HashMap();
+        map.put("type",1); // 1来单提醒
+        map.put("orderId",orders.getId());
+        map.put("concent","订单号" + orders.getNumber());
+        String json = JSONObject.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
         return submitVO;
     }
 
@@ -202,6 +212,7 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+
     }
 
     /**
