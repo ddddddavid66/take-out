@@ -38,4 +38,10 @@ select * from orders <where>
             <if test="status != null">and status = #{status}</if>
         </where>
     </select>
+    <update id="updateBatch">
+       <foreach collection="list" item="order">
+           update orders set status = #{order.status}, cancel_time = #{order.cancelTime},
+                             cancel_reason = #{order.cancelReason} where id = #{order.id}
+       </foreach>
+    </update>
 </mapper>
