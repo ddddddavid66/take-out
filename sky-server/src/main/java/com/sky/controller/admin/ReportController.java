@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sky.result.Result;
 import com.sky.service.ReportService;
 import com.sky.vo.TurnoverReportVO;
+import com.sky.vo.UserReportVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -30,5 +31,14 @@ public class ReportController {
         TurnoverReportVO turnoverReportVO = reportService.getTurnoverStatistics(begin,end);
         return Result.success(turnoverReportVO);
     }
+
+    @GetMapping("/userStatistics")
+    @ApiOperation("统计用户数量")
+    public Result<UserReportVO> userStatistics(@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin, @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end){
+        log.info("查询用户数据{}到{}",begin,end);
+        UserReportVO userReportVO = reportService.getUserStatistics(begin,end);
+        return Result.success(userReportVO);
+    }
+
 
 }
