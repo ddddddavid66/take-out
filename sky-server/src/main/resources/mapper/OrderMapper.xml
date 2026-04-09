@@ -44,4 +44,23 @@ select * from orders <where>
                              cancel_reason = #{order.cancelReason} where id = #{order.id}
        </foreach>
     </update>
+    <select id="sumByMap" resultType="java.lang.Double">
+        select sum(amount) from orders
+        <where>
+            <if test="begin != null">and order_time &gt; #{begin} </if>
+            <if test="end != null">and order_time &lt; #{end} </if>
+            <if test="status != null">and status = #{status} </if>
+        </where>
+    </select>
+    <select id="sumByMapAndDate" resultType="java.util.Map">
+        SELECT DATE(order_time) AS date, IFNULL(SUM(amount), 0) AS turnover
+        FROM orders
+        <where>
+            <if test="begin != null">AND order_time &gt; CONCAT(#{begin}, ' 00:00:00')</if>
+            <if test="end != null">AND order_time &lt; CONCAT(#{end}, ' 23:59:59')</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        GROUP BY DATE(order_time)
+        ORDER BY date
+    </select>
 </mapper>
