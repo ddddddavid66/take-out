@@ -143,12 +143,6 @@ public class OrderServiceImpl implements OrderService {
                 .orderTime(orders.getOrderTime())
                 .build();
         //通过webSocket 推送给浏览器
-        Map map = new HashMap();
-        map.put("type",1); // 1来单提醒
-        map.put("orderId",orders.getId());
-        map.put("concent","订单号" + orders.getNumber());
-        String json = JSONObject.toJSONString(map);
-        webSocketServer.sendToAllClient(json);
         return submitVO;
     }
 
@@ -213,6 +207,12 @@ public class OrderServiceImpl implements OrderService {
 
         orderMapper.update(orders);
 
+        Map map = new HashMap();
+        map.put("type",1); // 1来单提醒
+        map.put("orderId",orders.getId());
+        map.put("concent","订单号" + orders.getNumber());
+        String json = JSONObject.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
 
     /**
@@ -446,6 +446,25 @@ public class OrderServiceImpl implements OrderService {
         orders.setStatus(Orders.COMPLETED);
         orders.setDeliveryTime(LocalDateTime.now());
         orderMapper.update(orders);
+    }
+
+    /**
+     * 用户催单
+     * @param id
+     */
+    @Override
+    public void reminder(Long id) {
+        Orders orders = orderMapper.queryByOrderId(id);
+        if(orders == null){
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        //通过webSocket 推送给浏览器
+        Map map = new HashMap();
+        map.put("type",2); // 2 催单提醒
+        map.put("orderId",orders.getId());
+        map.put("concent","订单号" + orders.getNumber());
+        String json = JSONObject.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
     }
 
 
