@@ -68,4 +68,5 @@ public interface OrderMapper {
     List<Map<String, Object>> sumByMapAndDate(Map map);
 
 
+    List<Map<String, Object>> countByMapAndDateAndStatus(Map map);
 }

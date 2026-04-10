@@ -63,5 +63,16 @@ select * from orders <where>
         GROUP BY DATE(order_time)
         ORDER BY date
     </select>
+    <select id="countByMapAndDateAndStatus" resultType="java.util.Map">
+        SELECT DATE(order_time) AS date, IFNULL(count(id), 0) AS turnover
+        FROM orders
+        <where>
+            <if test="begin != null">AND order_time &gt; CONCAT(#{begin}, ' 00:00:00')</if>
+            <if test="end != null">AND order_time &lt; CONCAT(#{end}, ' 23:59:59')</if>
+            <if test="status != null">AND status = #{status}</if>
+        </where>
+        GROUP BY DATE(order_time)
+        ORDER BY date
+    </select>
 
 </mapper>

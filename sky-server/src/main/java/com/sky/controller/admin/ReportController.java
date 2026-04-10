@@ -3,6 +3,7 @@ package com.sky.controller.admin;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.sky.result.Result;
 import com.sky.service.ReportService;
+import com.sky.vo.OrderReportVO;
 import com.sky.vo.TurnoverReportVO;
 import com.sky.vo.UserReportVO;
 import io.swagger.annotations.Api;
@@ -38,6 +39,14 @@ public class ReportController {
         log.info("查询用户数据{}到{}",begin,end);
         UserReportVO userReportVO = reportService.getUserStatistics(begin,end);
         return Result.success(userReportVO);
+    }
+
+    @GetMapping("/ordersStatistics")
+    @ApiOperation("统计订单数据")
+    public Result<OrderReportVO> ordersStatistics(@DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin, @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end){
+        log.info("查询用户数据{}到{}",begin,end);
+        OrderReportVO orderReportVO = reportService.getOrderStatistics(begin,end);
+        return Result.success(orderReportVO);
     }
 
 
