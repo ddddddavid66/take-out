@@ -9,6 +9,7 @@ import com.sky.vo.DishVO;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface DishMapper {
@@ -62,5 +63,10 @@ public interface DishMapper {
     @AutoFill(OperationType.UPDATE)
     void updateStatus(@Param("dish") Dish dish, @Param("status") Integer status);
 
-
+    /**
+     * 根据条件统计菜品数量
+     * @param map
+     * @return
+     */
+    Integer countByMap(Map map);
 }

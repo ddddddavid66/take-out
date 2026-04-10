@@ -20,4 +20,6 @@ public interface UserMapper {
     User getById(Long userId);
 
     List<Map<String, Object>> sumUserByMapAndDate(Map map);
+
+    Integer countByMap(Map map);
 }
