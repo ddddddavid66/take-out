@@ -1,25 +1,24 @@
 package com.sky.service.impl;
 
+import com.sky.entity.OrderDetail;
 import com.sky.entity.Orders;
+import com.sky.mapper.OrderDetailMapper;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.service.ReportService;
 import com.sky.vo.OrderReportVO;
+import com.sky.vo.SalesTop10ReportVO;
 import com.sky.vo.TurnoverReportVO;
 import com.sky.vo.UserReportVO;
 import org.apache.commons.lang.StringUtils;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.w3c.dom.NameList;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @Service
@@ -28,6 +27,8 @@ public class ReportServiceImpl implements ReportService {
     private OrderMapper orderMapper;
     @Autowired
     private UserMapper userMapper;
+    @Autowired
+    private OrderDetailMapper orderDetailMapper;
 
     @Override
     public TurnoverReportVO getTurnoverStatistics(LocalDate start, LocalDate end) {
@@ -133,6 +134,41 @@ public class ReportServiceImpl implements ReportService {
                 .orderCompletionRate(rate.doubleValue())
                 .build();
     }
+
+    @Override
+    public SalesTop10ReportVO getTop10(LocalDate begin, LocalDate end) {
+        Map map = new HashMap();
+        map.put("end",end);
+        map.put("begin",begin);
+        map.put("status",Orders.COMPLETED);
+        Map<String, Integer> turnoverTotalMap = getMap4(map,Number::intValue);
+        List<Integer> countList  = new ArrayList<>();
+        List<String> nameList  = new ArrayList<>();
+        Set<String> keys = turnoverTotalMap.keySet();
+        for (Object o : keys) {
+            System.out.println(o);
+            Integer turnover = turnoverTotalMap.get(o.toString());
+            countList.add(turnover == null ? 0 : turnover);
+            nameList.add(o.toString());
+        }
+        return SalesTop10ReportVO.builder()
+                .nameList(StringUtils.join(nameList,","))
+                .numberList(StringUtils.join(countList,","))
+                .build();
+    }
+
+    private <T> Map<String, T> getMap4(Map map, Function<Number, T> converter) {
+        List<Map<String,Object>> totalResult = orderDetailMapper.countSaleTop10(map);
+        Map<String, T> turnoverTotalMap = new HashMap<>();
+        for (Map<String, Object> m : totalResult) {
+            String dateStr = m.get("name").toString();
+            Object turnoverVal = m.get("turnover");
+            T turnover = (turnoverVal instanceof Number) ? converter.apply((Number) turnoverVal) : null;
+            turnoverTotalMap.put(dateStr, turnover);
+        }
+        return turnoverTotalMap;
+    }
+
 
     @NonNullDecl
     private <T> Map<String, T> getMap(Map map, Function<Number, T> converter) {

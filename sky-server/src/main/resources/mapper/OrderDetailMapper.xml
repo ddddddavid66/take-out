@@ -17,4 +17,16 @@
                 #{orderId}
             </foreach>
     </select>
+    <select id="countSaleTop10" resultType="java.util.Map">
+        SELECT od.name as name,IFNULL(count(od.number), 0) AS turnover
+        FROM order_detail od left join orders o on o.id = od.order_id
+        <where>
+            <if test="begin != null">AND o.order_time &gt; CONCAT(#{begin}, ' 00:00:00')</if>
+            <if test="end != null">AND o.order_time &lt; CONCAT(#{end}, ' 23:59:59')</if>
+            <if test="status != null">AND o.status = #{status}</if>
+        </where>
+        GROUP BY od.name
+        ORDER BY turnover DESC
+        LIMIT 10
+    </select>
 </mapper>

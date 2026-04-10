@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface OrderDetailMapper {
@@ -16,4 +17,6 @@ public interface OrderDetailMapper {
 
     @Delete("delete from order_detail where order_id =#{orderId}")
     void deleteByOrderId(Long orderId);
+
+    List<Map<String, Object>> countSaleTop10(Map map);
 }
