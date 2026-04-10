@@ -6,18 +6,24 @@ import com.sky.mapper.OrderDetailMapper;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.service.ReportService;
-import com.sky.vo.OrderReportVO;
-import com.sky.vo.SalesTop10ReportVO;
-import com.sky.vo.TurnoverReportVO;
-import com.sky.vo.UserReportVO;
+import com.sky.service.WorkspaceService;
+import com.sky.vo.*;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.checkerframework.checker.nullness.compatqual.NonNullDecl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.NameList;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.function.Function;
 
@@ -29,6 +35,8 @@ public class ReportServiceImpl implements ReportService {
     private UserMapper userMapper;
     @Autowired
     private OrderDetailMapper orderDetailMapper;
+    @Autowired
+    private WorkspaceService workspaceService;
 
     @Override
     public TurnoverReportVO getTurnoverStatistics(LocalDate start, LocalDate end) {
@@ -155,6 +163,59 @@ public class ReportServiceImpl implements ReportService {
                 .nameList(StringUtils.join(nameList,","))
                 .numberList(StringUtils.join(countList,","))
                 .build();
+    }
+
+    /**
+     * 导出excel
+     * @param response
+     */
+    @Override
+    public void exportData(HttpServletResponse response) {
+        //查询数据库获取营业数据
+        LocalDate dataBegin = LocalDate.now().minusDays(30);
+        LocalDate dataEnd = LocalDate.now().minusDays(1);
+        LocalDateTime begin = LocalDateTime.of(dataBegin, LocalTime.MIN );
+        LocalDateTime end = LocalDateTime.of(dataEnd,  LocalTime.MAX);
+        BusinessDataVO businessData = workspaceService.getBusinessData(begin,end); //近30天
+        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("template/运营数据报表模板.xlsx");
+        try {
+            //获取 excel文件
+            XSSFWorkbook excel = new XSSFWorkbook(stream);
+            XSSFSheet sheet = excel.getSheet("Sheet1");
+            //填充时间
+            sheet.getRow(1).getCell(1).setCellValue("时间：" + dataBegin + "至" + dataEnd);
+            //填充概览数据
+            XSSFRow row1 = sheet.getRow(3);
+            row1.getCell(2).setCellValue(businessData.getTurnover());
+            row1.getCell(4).setCellValue(businessData.getOrderCompletionRate());
+            row1.getCell(6).setCellValue(businessData.getNewUsers());
+            XSSFRow row2 = sheet.getRow(4);
+            row2.getCell(2).setCellValue(businessData.getValidOrderCount());
+            row2.getCell(4).setCellValue(businessData.getUnitPrice());
+            //填充 明细数据
+            for (int i = 0; i < 30; i++) {
+                LocalDate localDate = dataBegin.plusDays(i);
+                BusinessDataVO data = workspaceService.getBusinessData(LocalDateTime.of(localDate, LocalTime.MIN), LocalDateTime.of(localDate, LocalTime.MAX));
+                //写入
+                XSSFRow row = sheet.getRow(7  + i);
+                row.getCell(1).setCellValue(localDate.toString());
+                row.getCell(2).setCellValue(data.getTurnover());
+                row.getCell(3).setCellValue(data.getValidOrderCount());
+                row.getCell(4).setCellValue(data.getOrderCompletionRate());
+                row.getCell(5).setCellValue(data.getUnitPrice());
+                row.getCell(6).setCellValue(data.getNewUsers());
+            }
+            //输出 到浏览器
+            ServletOutputStream outputStream = response.getOutputStream();
+            excel.write(outputStream);
+            excel.close();
+            outputStream.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        //输出流 下载到客户端浏览器
     }
 
     private <T> Map<String, T> getMap4(Map map, Function<Number, T> converter) {
